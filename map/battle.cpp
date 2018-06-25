@@ -1270,7 +1270,7 @@ int64 battle_calc_damage(struct block_list *src,struct block_list *bl,struct Dam
 			{
 				struct status_change *d_sc = status_get_sc(d_bl);
 
-				if( d_sc && d_sc->data[SC_DEFENDER] && (flag&(BF_LONG|BF_MAGIC)) == BF_LONG && skill_id != ASC_BREAKER && skill_id != CR_ACIDDEMONSTRATION && skill_id != NJ_ZENYNAGE && skill_id != KO_MUCHANAGE )
+				if( d_sc && d_sc->data[SC_DEFENDER] && (flag&(BF_LONG|BF_MAGIC)) == BF_LONG && skill_id != ASC_BREAKER && skill_id != CR_ACIDDEMONSTRATION && skill_id != NJ_ZENYNAGE && skill_id != GN_FIRE_EXPANSION_ACID && skill_id != KO_MUCHANAGE )
 					damage -= damage * d_sc->data[SC_DEFENDER]->val2 / 100;
 			}
 		}
@@ -1289,7 +1289,7 @@ int64 battle_calc_damage(struct block_list *src,struct block_list *bl,struct Dam
 		if (sc->data[SC_DEFENDER] &&
 			skill_id != NJ_ZENYNAGE && skill_id != KO_MUCHANAGE &&
 #ifdef RENEWAL
-			((flag&(BF_LONG|BF_WEAPON)) == (BF_LONG|BF_WEAPON) || skill_id == CR_ACIDDEMONSTRATION))
+			((flag&(BF_LONG|BF_WEAPON)) == (BF_LONG|BF_WEAPON) || skill_id == CR_ACIDDEMONSTRATION || skill_id == GN_FIRE_EXPANSION_ACID))
 #else
 			(flag&(BF_LONG|BF_WEAPON)) == (BF_LONG|BF_WEAPON))
 #endif
@@ -3128,7 +3128,7 @@ struct Damage battle_calc_skill_base_damage(struct Damage wd, struct block_list 
 				wd.damage = battle_calc_base_damage(src, sstatus, &sstatus->rhw, sc, tstatus->size, 0); //Monsters have no weight and use ATK instead
 			}
 
-			i = sstatus->str/10;
+			i = sstatus->batk; //changement de str/10 en batk
 			i*=i;
 			ATK_ADD(wd.damage, wd.damage2, i); //Add str bonus.
 			switch (tstatus->size) { //Size-fix. Is this modified by weapon perfection?
@@ -3687,9 +3687,9 @@ static int battle_calc_attack_skill_ratio(struct Damage wd, struct block_list *s
 		case TK_JUMPKICK:
 			//Different damage formulas depending on damage trigger
 			if (sc && sc->data[SC_COMBO] && sc->data[SC_COMBO]->val1 == skill_id)
-				skillratio += -100 + 4 * status_get_lv(src); //Tumble formula [4%*baselevel]
+				skillratio += -100 + 4 * 99; //Tumble formula [4%*baselevel]
 			else if (wd.miscflag) {
-				skillratio += -100 + 4 * status_get_lv(src); //Running formula [4%*baselevel]
+				skillratio += -100 + 4 * 99; //Running formula [4%*baselevel]
 				if (sc && sc->data[SC_SPURT]) //Spurt formula [8%*baselevel]
 					skillratio *= 2;
 			}
@@ -5133,11 +5133,11 @@ struct Damage battle_calc_weapon_final_atk_modifiers(struct Damage wd, struct bl
 		if (sc->data[SC_FUSION]) {
 			int hp= sstatus->max_hp;
 			if (sd && tsd) {
-				hp = 1*hp/100;
-				/*if (((int64)sstatus->hp * 100) <= ((int64)sstatus->max_hp * 20))
-					hp = sstatus->hp;*/
-			} /*else
-				hp = 2*hp/100; //2% hp loss per hit*/
+				hp = 8*hp/100;
+				if (((int64)sstatus->hp * 100) <= ((int64)sstatus->max_hp * 20))
+					hp = sstatus->hp;
+			} else
+				hp = 2*hp/100; //2% hp loss per hit
 			status_zap(src, hp, 0);
 		}
 		// Only affecting non-skills
@@ -5348,7 +5348,6 @@ static struct Damage battle_calc_weapon_attack(struct block_list *src, struct bl
 	struct status_data *tstatus = status_get_status_data(target);
 	int right_element, left_element;
 	bool infdef = false;
-	
 
 	memset(&wd,0,sizeof(wd));
 
@@ -5371,12 +5370,10 @@ static struct Damage battle_calc_weapon_attack(struct block_list *src, struct bl
 	tsd = BL_CAST(BL_PC, target);
 
 	//Check for Lucky Dodge
-	if (sd)
-		tstatus->flee2 = tstatus->flee2 - sd->bonus.perfect_hit*10;
-	if ((!skill_id || skill_id == PA_SACRIFICE) && tstatus->flee2 && rnd() % 1000 < tstatus->flee2) {
+	if ((!skill_id || skill_id == PA_SACRIFICE) && tstatus->flee2 && rnd()%1000 < tstatus->flee2) {
 		wd.type = DMG_LUCY_DODGE;
 		wd.dmg_lv = ATK_LUCKY;
-		if (wd.div_ < 0)
+		if(wd.div_ < 0)
 			wd.div_ *= -1;
 		return wd;
 	}
@@ -5827,22 +5824,6 @@ struct Damage battle_calc_magic_attack(struct block_list *src,struct block_list 
 				break;
 			case AB_RENOVATIO:
 				ad.damage = status_get_lv(src) * 10 + sstatus->int_;
-				break;
-			case GN_FIRE_EXPANSION_ACID:
-#ifdef RENEWAL
-				{
-					struct Damage wd = battle_calc_weapon_attack(src, target, skill_id, skill_lv, 0);
-
-					ad.damage = (int64)(7 * ((wd.damage / skill_lv + ad.damage / skill_lv) * tstatus->vit / 100));
-				}
-#else
-				if(tstatus->vit + sstatus->int_)
-					ad.damage = (int64)(7 * tstatus->vit * sstatus->int_ * sstatus->int_ / (10 * (tstatus->vit + sstatus->int_)));
-				else
-					ad.damage = 0;
-				if(tsd)
-					ad.damage >>= 1;
-#endif
 				break;
 			default: {
 				if (sstatus->matk_max > sstatus->matk_min) {
@@ -6569,7 +6550,7 @@ struct Damage battle_calc_misc_attack(struct block_list *src,struct block_list *
 			md.dmotion = 0; //No flinch animation
 			break;
 		case PA_PRESSURE:
-			md.damage = 500 + 300 * skill_lv;
+			md.damage = 18500 + 300 * skill_lv;
 			break;
 		case PA_GOSPEL:
 			if (mflag > 0)
@@ -6587,6 +6568,7 @@ struct Damage battle_calc_misc_attack(struct block_list *src,struct block_list *
 			}
 			break;
 		case CR_ACIDDEMONSTRATION:
+		case GN_FIRE_EXPANSION_ACID:
 #ifdef RENEWAL
 			// Official Renewal formula [helvetica]
 			// damage = 7 * ((atk + matk)/skill level) * (target vit/100)
@@ -7685,6 +7667,7 @@ int battle_check_target( struct block_list *src, struct block_list *target,int f
 		{
 			struct mob_data *md = ((TBL_MOB*)target);
 
+//			if (ud && ud->immune_attack)
 			if ((ud && ud->immune_attack) || (md != NULL && md->state.inmunity))
 				return 0;
 			if(((md->special_state.ai == AI_SPHERE || //Marine Spheres
@@ -7909,6 +7892,7 @@ int battle_check_target( struct block_list *src, struct block_list *target,int f
 		if( flag&(BCT_PARTY|BCT_ENEMY) )
 		{
 			int s_party = status_get_party_id(s_bl);
+//			if( s_party && s_party == status_get_party_id(t_bl) && !(map[m].flag.pvp && map[m].flag.pvp_noparty) && !(map_flag_gvg(m) && map[m].flag.gvg_noparty) && (!map[m].flag.battleground || sbg_id == tbg_id) )
 			//if( s_party && s_party == status_get_party_id(t_bl) && !(map[m].flag.pvp && map[m].flag.pvp_noparty) && !(map_flag_gvg(m) && map[m].flag.gvg_noparty) && (!map[m].flag.battleground || sbg_id == tbg_id) )
 			if (map[m].flag.battleground && sbg_id && sbg_id == tbg_id)
 				state |= BCT_PARTY; // On Battleground, same team works like Party
@@ -7921,6 +7905,7 @@ int battle_check_target( struct block_list *src, struct block_list *target,int f
 		{
 			int s_guild = status_get_guild_id(s_bl);
 			int t_guild = status_get_guild_id(t_bl);
+//			if( !(map[m].flag.pvp && map[m].flag.pvp_noguild) && s_guild && t_guild && (s_guild == t_guild || (!(flag&BCT_SAMEGUILD) && guild_isallied(s_guild, t_guild))) && (!map[m].flag.battleground || sbg_id == tbg_id) )
 			//if( !(map[m].flag.pvp && map[m].flag.pvp_noguild) && s_guild && t_guild && (s_guild == t_guild || (!(flag&BCT_SAMEGUILD) && guild_isallied(s_guild, t_guild))) && (!map[m].flag.battleground || sbg_id == tbg_id) )
 			if (map[m].flag.battleground && sbg_id && sbg_id == tbg_id)
 				state |= BCT_GUILD; // On Battleground, same team works like Guild
@@ -8399,7 +8384,8 @@ static const struct _battle_data {
 	{ "bg_flee_penalty",                    &battle_config.bg_flee_penalty,                 20,     0,      INT_MAX,        },
 /**
  * eAmod BG
-**/	{ "bg_enabled",							&battle_config.bg_enabled,						1,		 0,		1,				},
+**/	
+	{ "bg_enabled",							&battle_config.bg_enabled,						1,		 0,		1,				},
 	{ "bg_from_town_only",					&battle_config.bg_from_town_only,				1,		 0,		1,				},
 	{ "bg_ip_check",						&battle_config.bg_ip_check,						1,		 0,		1,				},
 	{ "bg_idle_announce",					&battle_config.bg_idle_announce,				0,		 0,		INT_MAX,		},
@@ -8410,7 +8396,6 @@ static const struct _battle_data {
 	{ "bg_xy_interval",						&battle_config.bg_xy_interval,					1000,   100,    INT_MAX,		},
 	{ "bg_ranked_mode",						&battle_config.bg_ranked_mode,					1,		 0,		1,				},
 	{ "bg_leader_change",					&battle_config.bg_leader_change,				1,		 0,		1,				},
-
 
 // rAthena
 	{ "max_third_parameter",				&battle_config.max_third_parameter,				135,	10,		SHRT_MAX,		},
@@ -8524,7 +8509,7 @@ static const struct _battle_data {
 	{ "change_party_leader_samemap",        &battle_config.change_party_leader_samemap,     1,      0,      1,              },
 	{ "dispel_song",                        &battle_config.dispel_song,                     0,      0,      1,              },
 	{ "guild_maprespawn_clones",			&battle_config.guild_maprespawn_clones,			0,		0,		1,				},
-	{ "hide_fav_sell", 						&battle_config.hide_fav_sell,			0,      0,      1,              },
+	{ "hide_fav_sell", 			&battle_config.hide_fav_sell,			0,      0,      1,              },
 	{ "mail_daily_count",					&battle_config.mail_daily_count,				100,	0,		INT32_MAX,		},
 	{ "mail_zeny_fee",						&battle_config.mail_zeny_fee,					2,		0,		100,			},
 	{ "mail_attachment_price",				&battle_config.mail_attachment_price,			2500,	0,		INT32_MAX,		},

@@ -1796,8 +1796,8 @@ int map_addflooritem(struct item *item, int amount, int16 m, int16 x, int16 y, i
 
 	return fitem->bl.id;
 }
-
 int map_addflooritem_area(struct block_list* bl, int m, int x, int y, int nameid, int amount)
+
 {
 	struct item item_tmp;
 	int count, range, i;

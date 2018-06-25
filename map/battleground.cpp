@@ -19,6 +19,7 @@
 #include "pet.hpp"
 #include "homunculus.hpp"
 #include "mercenary.hpp"
+#include "guild.hpp"
 #include "elemental.hpp"
 #include "party.hpp"
 #include "log.hpp"
@@ -26,12 +27,12 @@
 #include "skill.hpp"
 #include "mob.hpp"
 #include "achievement.hpp"
-
 #include <string.h>
 #include <stdio.h>
 
 static DBMap* bg_team_db; // int bg_id -> struct battleground_data*
 static unsigned int bg_team_counter = 0; // Next bg_id
+
 struct guild bg_guild[MAX_BATTLEGROUND_TEAMS]; // Temporal fake guild information
 static const unsigned int bg_colors[MAX_BATTLEGROUND_TEAMS] = { 0x0000FF, 0xFF0000, 0x00FF00, 0xFFFFFF, 0xFFFFFF, 0xFFFFFF, 0xFFFFFF, 0xFFFFFF, 0xFFFFFF, 0xFFFFFF, 0xFFFFFF, 0xFFFFFF, 0xFFFFFF };
 
@@ -174,6 +175,8 @@ int bg_team_clean(int bg_id, bool remove)
 		return 0;
 
 	for( i = 0; i < MAX_BG_MEMBERS; i++ ) {
+//		struct map_session_data *sd;
+
 		if( (sd = bg->members[i].sd) == NULL )
 			continue;
 
@@ -202,6 +205,7 @@ int bg_team_clean(int bg_id, bool remove)
 		clif_guild_emblem_area(&sd->bl);
 	}
 
+//	idb_remove(bg_team_db, bg_id);
 	for (i = 0; i < MAX_GUILDSKILL; i++)
 	{
 		if (bg->skill_block_timer[i] == INVALID_TIMER)
@@ -229,8 +233,9 @@ int bg_team_warp(int bg_id, unsigned short mapindex, short x, short y)
 	int i;
 	struct battleground_data *bg = bg_team_search(bg_id);
 
-	if( bg == NULL ) return 0;
-	if (mapindex == 0)
+	if( bg == NULL )
+		return 0;
+	if( mapindex == 0 )
 	{
 		mapindex = bg->mapindex;
 		x = bg->x;
@@ -259,10 +264,9 @@ int bg_reveal_pos(struct block_list *bl, va_list ap)
 	return 0;
 }
 
-
 int bg_send_dot_remove(struct map_session_data *sd)
 {
-	//if( sd && sd->bg_id )
+//	if( sd && sd->bg_id )
 	struct battleground_data *bg;
 	int m;
 
@@ -310,7 +314,7 @@ int bg_team_join(int bg_id, struct map_session_data *sd)
 	clif_name_area(&sd->bl);
 
 	for( i = 0; i < MAX_BG_MEMBERS; i++ ) {
-
+//		struct map_session_data *pl_sd;
 		if ((pl_sd = bg->members[i].sd) == NULL)
 			continue;
 
@@ -343,8 +347,9 @@ int bg_team_leave(struct map_session_data *sd, int flag)
 		return 0;
 	if ((bg = bg_team_search(sd->bg_id)) == NULL)
 		return 0;
-
+ 
 	clif_bg_leave_single(sd, sd->status.name, "Leaving Battle...");
+
 	bg_send_dot_remove(sd);
 	bg_id = sd->bg_id;
 	sd->bg_id = 0;
@@ -396,13 +401,13 @@ int bg_team_leave(struct map_session_data *sd, int flag)
 			case 1: sprintf(output, "Server : %s has quit the game...", sd->status.name); break;
 			case 0: sprintf(output, "Server : %s is leaving the battlefield...", sd->status.name); break;
 		}
-
+ 
 		clif_guild_basicinfo(pl_sd);
 		clif_bg_emblem(pl_sd, bg->g);
 		clif_bg_memberlist(pl_sd);
 	}
-	clif_bg_message(bg, 0, "Server", output, strlen(output) + 1);
 
+	clif_bg_message(bg, 0, "Server", output, strlen(output) + 1);
 
 	if( bg->logout_event[0] && flag )
 		npc_event(sd, bg->logout_event, 0);
@@ -504,9 +509,12 @@ int bg_send_message(struct map_session_data *sd, const char *mes, int len)
 	struct battleground_data *bg;
 
 	nullpo_ret(sd);
-	if (sd->bg_id == 0 || (bg = bg_team_search(sd->bg_id)) == NULL)
+
+	if( sd->bg_id == 0 || (bg = bg_team_search(sd->bg_id)) == NULL )
 		return 0;
+	
 	clif_bg_message(bg, sd->bl.id, sd->status.name, mes, len);
+
 	return 0;
 }
 

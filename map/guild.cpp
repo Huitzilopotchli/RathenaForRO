@@ -319,7 +319,6 @@ int guild_payexp_timer(int tid, unsigned int tick, int id, intptr_t data) {
  * @see DBApply
  */
 int guild_send_xy_timer_sub(DBKey key, DBData *data, va_list ap) {
-
 	struct guild *g = (struct guild *)db_data2ptr(data);
 	int i;
 

@@ -964,7 +964,6 @@ int party_skill_check(struct map_session_data *sd, int party_id, uint16 skill_id
 
 	if(!party_id || (p = party_search(party_id)) == NULL)
 		return 0;
-
 	party_check_state(p);
 	switch(skill_id) {
 		case TK_COUNTER: //Increase Triple Attack rate of Monks.
@@ -981,7 +980,7 @@ int party_skill_check(struct map_session_data *sd, int party_id, uint16 skill_id
 			return 0; //Unknown case?
 	}
 
-	for(i = 0; i < MAX_BG_MEMBERS; i++) {
+	for(i = 0; i < MAX_PARTY; i++) {
 		if ((p_sd = p->data[i].sd) == NULL)
 			continue;
 
@@ -1273,9 +1272,7 @@ int party_foreachsamemap(int (*func)(struct block_list*,va_list),struct map_sess
 	x1 = sd->bl.x+range;
 	y1 = sd->bl.y+range;
 
-
 	if (bg) {
-
 		for (i = 0; i < MAX_BG_MEMBERS; i++)
 		{
 			if ((psd = bg->members[i].sd) == NULL)
@@ -1290,11 +1287,10 @@ int party_foreachsamemap(int (*func)(struct block_list*,va_list),struct map_sess
 	else if (p)
 	{
 		for (i = 0; i < MAX_PARTY; i++) {
-			struct map_session_data *psd = p->data[i].sd;
+			struct map_session_data *psd = p->data[i].sd;;
 
 			if (!psd)
 				continue;
-
 			if (psd->bl.m != sd->bl.m || !psd->bl.prev)
 				continue;
 

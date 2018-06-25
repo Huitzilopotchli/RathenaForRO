@@ -267,6 +267,7 @@ struct map_session_data {
 		bool keepshop; // Whether shop data should be removed when the player disconnects
 		bool mail_writing; // Whether the player is currently writing a mail in RODEX or not
 		bool cashshop_open;
+		bool sale_open;
 		//Eamod BG
 		unsigned int only_walk : 1; // [Zephyrus] Block Skills and Item usage to a player
 		unsigned bg_afk : 1; // Moved here to reduce searchs

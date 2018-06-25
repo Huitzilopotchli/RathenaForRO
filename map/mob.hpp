@@ -329,6 +329,7 @@ void mob_heal(struct mob_data *md,unsigned int heal);
 #define mob_stop_attack(md) unit_stop_attack(&(md)->bl)
 //#define mob_is_battleground(md) ( map[(md)->bl.m].flag.battleground && ((md)->mob_id == MOBID_BARRICADE2 || ((md)->mob_id >= MOBID_FOOD_STOR && (md)->mob_id <= MOBID_PINK_CRYST)) )
 #define mob_is_battleground(md) (map[(md)->bl.m].flag.battleground && ((md)->mob_id == 1906 || ((md)->mob_id >= 1909 && (md)->mob_id <= 1915) || ((md)->mob_id >= 2105 && (md)->mob_id <= 2107)))
+
 #define mob_is_samename(md, mid) (strcmp(mob_db((md)->mob_id)->jname, mob_db(mid)->jname) == 0)
 
 void mob_clear_spawninfo();

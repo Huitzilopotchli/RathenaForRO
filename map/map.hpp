@@ -57,7 +57,7 @@ void map_msg_reload(void);
 #define NATURAL_HEAL_INTERVAL 500
 #define MIN_FLOORITEM 2
 #define MAX_FLOORITEM START_ACCOUNT_NUM
-#define MAX_LEVEL 175
+#define MAX_LEVEL 1000
 #define MAX_DROP_PER_MAP 48
 #define MAX_IGNORE_LIST 20 	// official is 14
 #define MAX_VENDING 12
@@ -840,6 +840,7 @@ int map_removemobs_timer(int tid, unsigned int tick, int id, intptr_t data);
 void map_clearflooritem(struct block_list* bl);
 int map_addflooritem(struct item *item, int amount, int16 m, int16 x, int16 y, int first_charid, int second_charid, int third_charid, int flags, unsigned short mob_id);
 int map_addflooritem_area(struct block_list* bl, int m, int x, int y, int nameid, int amount); // [Zephyrus]
+
 // instances
 int map_addinstancemap(const char *name, unsigned short instance_id);
 int map_delinstancemap(int m);

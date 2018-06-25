@@ -6663,6 +6663,7 @@ BUILDIN_FUNC(getelementofarray)
 /////////////////////////////////////////////////////////////////////
 /// ...
 ///
+
 int viewpointmap_sub(struct block_list *bl, va_list ap)
 {
 	struct map_session_data *sd;
@@ -10292,6 +10293,7 @@ BUILDIN_FUNC(monster)
 		m = map_mapname2mapid(mapn);
 
 		int mobid = mob_once_spawn(sd, m, x, y, str, class_, 1, event, size, ai);
+
 		script_pushint(st, mobid);
 
 	return SCRIPT_CMD_SUCCESS;
@@ -17415,7 +17417,7 @@ BUILDIN_FUNC(pcblockmove)
 	struct block_list *bl = NULL;
 
 	if (script_getnum(st, 2))
-		bl = map_id2bl(script_getnum(st, 2));
+		bl = map_id2bl(script_getnum(st,2));
 	else
 		bl = map_id2bl(st->rid);
 
@@ -17423,7 +17425,7 @@ BUILDIN_FUNC(pcblockmove)
 		struct unit_data *ud = unit_bl2ud(bl);
 
 		if (ud)
-			ud->state.blockedmove = script_getnum(st, 3) > 0;
+			ud->state.blockedmove = script_getnum(st,3) > 0;
 	}
 
 	return SCRIPT_CMD_SUCCESS;
@@ -20002,18 +20004,18 @@ BUILDIN_FUNC(waitingroom2bg)
 	int x, y, mapindex = 0, guild_index, bg_id;
 	unsigned char i, c = 0;
 
-	if (script_hasdata(st, 7))
-		nd = npc_name2id(script_getstr(st, 7));
+	if( script_hasdata(st,7) )
+		nd = npc_name2id(script_getstr(st,7));
 	else
 		nd = (struct npc_data *)map_id2bl(st->oid);
 
-	if (nd == NULL || (cd = (struct chat_data *)map_id2bl(nd->chat_id)) == NULL)
+	if( nd == NULL || (cd = (struct chat_data *)map_id2bl(nd->chat_id)) == NULL )
 	{
-		script_pushint(st, 0);
+		script_pushint(st,0);
 		return SCRIPT_CMD_SUCCESS;
 	}
 
-	map_name = script_getstr(st, 2);
+	map_name = script_getstr(st,2);
 	if (strcmp(map_name, "-") != 0 && (mapindex = mapindex_name2id(map_name)) == 0)
 	{ // Invalid Map
 		script_pushint(st, 0);
@@ -20027,27 +20029,26 @@ BUILDIN_FUNC(waitingroom2bg)
 		ev = script_getstr(st, 6); // Logout Event
 	if (script_hasdata(st, 7))
 		dev = script_getstr(st, 7); // Die Event
-
 	check_event(st, ev);
 	check_event(st, dev);
 
 	guild_index = cap_value(guild_index, 0, 12);
 	if ((bg_id = bg_create(mapindex, x, y, guild_index, ev, dev)) == 0)
 	{ // Creation failed
-		script_pushint(st, 0);
+		script_pushint(st,0);
 		return SCRIPT_CMD_SUCCESS;
 	}
 
 	for (i = 0; i < cd->users; i++) { // Only add those who are in the chat room
 		struct map_session_data *sd;
-		if ((sd = cd->usersd[i]) != NULL && bg_team_join(bg_id, sd)) {
+		if( (sd = cd->usersd[i]) != NULL && bg_team_join(bg_id, sd) ){
 			mapreg_setreg(reference_uid(add_str("$@arenamembers"), c), sd->bl.id);
 			++c;
 		}
 	}
 
 	mapreg_setreg(add_str("$@arenamembersnum"), c);
-	script_pushint(st, bg_id);
+	script_pushint(st,bg_id);
 	return SCRIPT_CMD_SUCCESS;
 }
 
@@ -20060,7 +20061,7 @@ BUILDIN_FUNC(waitingroom2bg_single)
 	struct battleground_data *bg;
 	int x, y, mapindex, bg_id;
 
-	bg_id = script_getnum(st, 2);
+	bg_id = script_getnum(st,2);
 	if ((bg = bg_team_search(bg_id)) == NULL) {
 		script_pushint(st, false);
 		return SCRIPT_CMD_SUCCESS;
@@ -20080,15 +20081,15 @@ BUILDIN_FUNC(waitingroom2bg_single)
 		y = bg->y;
 	}
 
-	nd = npc_name2id(script_getstr(st, 6));
+	nd = npc_name2id(script_getstr(st,6));
 
-	if (nd == NULL || (cd = (struct chat_data *)map_id2bl(nd->chat_id)) == NULL || cd->users <= 0)
+	if( nd == NULL || (cd = (struct chat_data *)map_id2bl(nd->chat_id)) == NULL || cd->users <= 0 )
 		return SCRIPT_CMD_SUCCESS;
 
-	if ((sd = cd->usersd[0]) == NULL)
+	if( (sd = cd->usersd[0]) == NULL )
 		return SCRIPT_CMD_SUCCESS;
 
-	if (bg_team_join(bg_id, sd) && pc_setpos(sd, mapindex, x, y, CLR_TELEPORT) == SETPOS_OK)
+	if( bg_team_join(bg_id, sd) && pc_setpos(sd, mapindex, x, y, CLR_TELEPORT) == SETPOS_OK)
 	{
 		script_pushint(st, true);
 	}
@@ -20120,7 +20121,6 @@ BUILDIN_FUNC(bg_create) {
 		ev = script_getstr(st, 6); // Logout Event
 	if (script_hasdata(st, 7))
 		dev = script_getstr(st, 7); // Die Event
-
 	check_event(st, ev);
 	check_event(st, dev);
 
@@ -20139,7 +20139,7 @@ BUILDIN_FUNC(bg_join) {
 	struct map_session_data *sd;
 	struct battleground_data *bg;
 //	int x, y, bg_id, mapindex;
-	int x, y, mapindex = 0, bg_id;
++	int x, y, mapindex = 0, bg_id;
 
 	bg_id = script_getnum(st, 2);
 	if ((bg = bg_team_search(bg_id)) == NULL) {
@@ -20322,7 +20322,6 @@ BUILDIN_FUNC(bg_destroy)
 {
 	int bg_id = script_getnum(st,2);
 //	bg_team_delete(bg_id);
-//	return SCRIPT_CMD_SUCCESS;
 	bg_team_clean(bg_id, true);
 	return SCRIPT_CMD_SUCCESS;
 }
@@ -20376,7 +20375,7 @@ BUILDIN_FUNC(bg_getareausers)
 	x1 = script_getnum(st,6);
 	y1 = script_getnum(st,7);
 
-	for (i = 0; i < MAX_BG_MEMBERS; i++)
+	for( i = 0; i < MAX_BG_MEMBERS; i++ )
 	{
 		struct map_session_data *sd;
 		if( (sd = bg->members[i].sd) == NULL )
@@ -20462,8 +20461,7 @@ BUILDIN_FUNC(bg_get_data)
 					j++;
 				}
 				script_pushint(st, i);
-			}
-			break;
+			}			break;
 		default:
 			ShowError("script:bg_get_data: unknown data identifier %d\n", type);
 			break;
@@ -25297,8 +25295,7 @@ struct script_function buildin_func[] = {
 	// BattleGround
 //	BUILDIN_DEF(waitingroom2bg,"sii???"),
 	BUILDIN_DEF(bg_logincount, ""),
-	BUILDIN_DEF(bg_team_create, "siiiss"),
-	
+	BUILDIN_DEF(bg_team_create, "siiiss"),	
 	BUILDIN_DEF(bg_queue_create, "ss?"),
 	BUILDIN_DEF(bg_queue_event, "is"),
 	BUILDIN_DEF(bg_queue_join, "i"),
@@ -25485,6 +25482,7 @@ struct script_function buildin_func[] = {
 	BUILDIN_DEF(achievementcomplete,"i?"),
 	BUILDIN_DEF(achievementexists,"i?"),
 	BUILDIN_DEF(achievementupdate,"iii?"),
+
 
 	BUILDIN_DEF(getequiprefinecost,"iii?"),
 	BUILDIN_DEF2(round, "round", "i"),
