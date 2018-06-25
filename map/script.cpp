@@ -19828,7 +19828,7 @@ BUILDIN_FUNC(bg_queue2teams)
 	int t, bg_id = 0, total_teams = 0, q_id, min, max, type, limit = 0;
 	int arg_offset = 6;
 	struct map_session_data *sd;
-	
+
 	q_id = script_getnum(st, 2); // Queue ID
 	if ((qd = queue_search(q_id)) == NULL)
 	{
@@ -19874,52 +19874,52 @@ BUILDIN_FUNC(bg_queue2teams)
 	limit = min(max * total_teams, qd->users);
 
 	switch (type) {
-		case 0: // Lineal - Maybe to keep party together
+	case 0: // Lineal - Maybe to keep party together
+	{
+		t = 0;
+		int i = 0;
+		for (i = 0; i < limit; i++) {
+
+			if ((i % (limit / total_teams)) == 0) // Switch Team
+				bg_id = script_getnum(st, t + arg_offset);
+
+			if (!qd->first || (sd = qd->first->sd) == NULL)
+				break; // No more people to join Teams
+
+			bg_team_join(bg_id, sd);
+			queue_member_remove(qd, sd->bl.id);
+
+			if (t++ >= total_teams)
+				break;
+		}
+
+	}
+	break;
+	default:
+	case 1: // Random
+	{
+		t = 0;
+		int pos = 0, i = 0;
+		struct queue_member *qm;
+
+		for (i = 0; i < limit; i++)
 		{
-			t = 0;
-			int i = 0;
-			for (i = 0; i < limit; i++) {
+			if ((i % (limit / total_teams)) == 0) // Switch Team
+				bg_id = script_getnum(st, t + arg_offset);
 
-				if ((i % (limit / total_teams)) == 0) // Switch Team
-					bg_id = script_getnum(st, t + arg_offset);
+			pos = 1 + rand() % (limit - i);
 
-				if (!qd->first || (sd = qd->first->sd) == NULL)
-					break; // No more people to join Teams
+			if ((qm = queue_member_get(qd, pos)) == NULL || (sd = qm->sd) == NULL)
+				break;
 
-				bg_team_join(bg_id, sd);
-				queue_member_remove(qd, sd->bl.id);
+			bg_team_join(bg_id, sd);
+			queue_member_remove(qd, sd->bl.id);
 
-				if (t++ >= total_teams)
-					break;
-			}
-
+			if (t++ >= total_teams)
+				break;
 		}
-			break;
-		default:
-		case 1: // Random
-			{
-				t = 0;
-				int pos = 0, i = 0;
-				struct queue_member *qm;
-
-				for (i = 0; i < limit; i++)
-				{
-					if ((i % (limit / total_teams)) == 0) // Switch Team
-						bg_id = script_getnum(st, t + arg_offset);
-
-					pos = 1 + rand() % (limit - i);
-
-					if ((qm = queue_member_get(qd, pos)) == NULL || (sd = qm->sd) == NULL)
-						break;
-
-					bg_team_join(bg_id, sd);
-					queue_member_remove(qd, sd->bl.id);
-
-					if (t++ >= total_teams)
-						break;
-				}
-		}
-			break;
+	}
+	break;
 	}
 
 	script_pushint(st, 1);
