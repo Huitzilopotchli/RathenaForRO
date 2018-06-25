@@ -4996,7 +4996,7 @@ bool pc_isUseitem(struct map_session_data *sd,int n)
 		(item->class_base[sd->class_&JOBL_2_1?1:(sd->class_&JOBL_2_2?2:0)])
 	))
 		return false;
-
+	
 	if (sd->sc.count && (
 		sd->sc.data[SC_BERSERK] || sd->sc.data[SC_SATURDAYNIGHTFEVER] ||
 		(sd->sc.data[SC_GRAVITATION] && sd->sc.data[SC_GRAVITATION]->val3 == BCT_SELF) ||
@@ -5051,7 +5051,6 @@ int pc_useitem(struct map_session_data *sd,int n)
 			return 0;
 		}
 #else
-
 		if (!sd->npc_item_flag)
 			return 0;
 #endif
@@ -9098,7 +9097,7 @@ bool pc_can_attack( struct map_session_data *sd, int target_id ) {
 		sd->sc.data[SC_BLADESTOP] ||
 		sd->sc.data[SC_DEEPSLEEP] ||
 		(sd->sc.data[SC_GRAVITATION] && sd->sc.data[SC_GRAVITATION]->val3 == BCT_SELF) ||
-		sd->sc.data[SC_KINGS_GRACE])
+		sd->sc.data[SC_KINGS_GRACE] )
 			return false;
 
 	return true;

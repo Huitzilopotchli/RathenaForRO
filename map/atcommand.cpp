@@ -6,7 +6,6 @@
 #include <stdlib.h>
 #include <math.h>
 
-
 #include "../common/cbasetypes.h"
 #include "../common/mmo.h"
 #include "../common/timer.h"
@@ -9861,54 +9860,6 @@ ACMD_FUNC(cloneequip) {
 	return 0;
 }
 
-/*=========================================
-* Check values of resistance to elements
-* [ Keitenai ]
-*-----------------------------------------*/
-ACMD_FUNC(resistance) {
-	char output[CHAT_SIZE_MAX];
-	int i;
-	struct {
-		const char* format;
-		int value;
-		
-	} output_table[] = {
-			{ "   [ %d %] Neutral", 0 },
-			{ "   [ %d %] Wate resist", 0 },
-			{ "   [ %d %] Earth", 0 },
-			{ "   [ %d %] Fire", 0 },
-			{ "   [ %d %] Wind", 0 },
-			{ "   [ %d %] Poison", 0 },
-			{ "   [ %d %] Holy", 0 },
-			{ "   [ %d %] Dark", 0 },
-			{ "   [ %d %] Ghost", 0 },
-			{ "   [ %d %] Long Range", 0 },
-			{ "   [ %d %] Demi-Humain", 0 },
-			{ "   [ %d %] Medium Size", 0 },
-			{ NULL, 0 }
-		};
-		memset(output, '\0', sizeof(output));
-		clif_displaymessage(sd->fd, "========= Resistance Values =========");
-		output_table[0].value = (sd->subele[ELE_NEUTRAL] + sd->subele_script[ELE_NEUTRAL]);
-		output_table[1].value = (sd->subele[ELE_WATER] + sd->subele_script[ELE_WATER]);
-		output_table[2].value = (sd->subele[ELE_EARTH] + sd->subele_script[ELE_EARTH]);
-		output_table[3].value = (sd->subele[ELE_FIRE] + sd->subele_script[ELE_FIRE]);
-		output_table[4].value = (sd->subele[ELE_WIND] + sd->subele_script[ELE_WIND]);
-		output_table[5].value = (sd->subele[ELE_POISON] + sd->subele_script[ELE_POISON]);
-		output_table[6].value = (sd->subele[ELE_HOLY] + sd->subele_script[ELE_HOLY]);
-		output_table[7].value = (sd->subele[ELE_DARK] + sd->subele_script[ELE_DARK]);
-		output_table[8].value = (sd->subele[ELE_GHOST] + sd->subele_script[ELE_GHOST]);
-		output_table[9].value = (sd->bonus.long_attack_def_rate);
-		output_table[10].value = (sd->subrace[RC_PLAYER]);
-		output_table[11].value = (sd->subsize[SZ_MEDIUM] + sd->subsize[SZ_ALL]);
-
-		for (i = 0; output_table[i].format != NULL; i++) {
-			sprintf(output, output_table[i].format, output_table[i].value);
-			clif_displaymessage(fd, output);
-		}
-		return 0;		
-}
-
 /**
 * Clone other player's statuses/parameters using method same like ACMD_FUNC(param), doesn't use stat point
 * Usage: @clonestat <char name/ID>
@@ -10036,6 +9987,63 @@ ACMD_FUNC(adopt)
 		clif_displaymessage(fd, msg_txt(sd, 744 + response - 1));
 	return -1;
 }
+
+/**
+ * Opens the limited sale window.
+ * Usage: @limitedsale or client command /limitedsale on supported clients
+ */
+ACMD_FUNC(limitedsale){
+	nullpo_retr(-1, sd);
+
+	clif_sale_open(sd);
+
+	return 0;
+}
+
+/*=========================================
+ * Check values of resistance to elements
+ * [ Keitenai ]
+ *-----------------------------------------*/
+ACMD_FUNC(resistance) {
+	char output[CHAT_SIZE_MAX];
+	int i;
+	struct {
+		const char* format;
+		int value;
+	} output_table[] = {
+		{ "   [ %d ] Neutral resist", 0 },
+		{ "   [ %d ] Water resist", 0 },
+		{ "   [ %d ] Earth resist", 0 },
+		{ "   [ %d ] Fire resist", 0 },
+		{ "   [ %d ] Wind resist", 0 },
+		{ "   [ %d ] Poison resist", 0 },
+		{ "   [ %d ] Holy resist", 0 },
+		{ "   [ %d ] Dark resist", 0 },
+		{ "   [ %d ] Ghost resist", 0 },
+		{ "   [ %d ] Undead resist", 0 },
+		{ NULL, 0 }
+	};
+	memset(output, '\0', sizeof(output));
+	clif_displaymessage(sd->fd, "========= Resistance Values =========");
+	output_table[0].value = sd->subele[ELE_NEUTRAL];
+	output_table[1].value = sd->subele[ELE_WATER];
+	output_table[2].value = sd->subele[ELE_EARTH];
+	output_table[3].value = sd->subele[ELE_FIRE];
+	output_table[4].value = sd->subele[ELE_WIND];
+	output_table[5].value = sd->subele[ELE_POISON];
+	output_table[6].value = sd->subele[ELE_HOLY];
+	output_table[7].value = sd->subele[ELE_DARK];
+	output_table[8].value = sd->subele[ELE_GHOST];
+	output_table[9].value = sd->subele[ELE_UNDEAD];
+
+	for (i = 0; output_table[i].format != NULL; i++) {
+		sprintf(output, output_table[i].format, output_table[i].value);
+		clif_displaymessage(fd, output);
+	}
+	return 0;
+}
+
+
 
 /*==========================================
 * Battleground Leader Commands
@@ -10435,15 +10443,14 @@ void atcommand_basecommands(void) {
 		ACMD_DEF(adopt),
 		ACMD_DEF(agitstart3),
 		ACMD_DEF(agitend3),
-		ACMD_DEF(resistance),
 		/**
 		 * BG eAmod
 		**/
 		ACMD_DEF(order),
 		ACMD_DEF(leader),
 		ACMD_DEF(reportafk),
+		ACMD_DEFR(limitedsale, ATCMD_NOCONSOLE|ATCMD_NOAUTOTRADE),
 	};
-
 	AtCommandInfo* atcommand;
 	int i;
 

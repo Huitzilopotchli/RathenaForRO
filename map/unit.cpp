@@ -2267,7 +2267,7 @@ int unit_attack(struct block_list *src,int target_id,int continuous)
 		return 0;
 	}
 
-	if(!unit_can_attack(src, target_id)) {
+	if( !unit_can_attack(src, target_id) ) {
 		unit_stop_attack(src);
 		return 0;
 	}

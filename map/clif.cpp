@@ -8213,10 +8213,10 @@ void clif_guild_belonginfo(struct map_session_data *sd)
 
 	nullpo_retv(sd);
 	if (sd->bg_id)
-	{
-		clif_bg_belonginfo(sd);
-		return;
-	}
+	    {
+	        clif_bg_belonginfo(sd);
+	        return;
+	    }
 	nullpo_retv(g = sd->guild);
 
 	fd=sd->fd;
@@ -12342,12 +12342,9 @@ static void clif_parse_UseSkillToPosSub(int fd, struct map_session_data *sd, uin
 #endif
 
 	//Whether skill fails or not is irrelevant, the char ain't idle. [Skotlex]
-	if (battle_config.idletime_option&IDLE_USESKILLTOPOS)
-		sd->idletime = last_tick;
 //	if (battle_config.idletime_option&IDLE_USESKILLTOPOS)
 //		sd->idletime = last_tick;
 		pc_update_last_action(sd);
-
 	if( skill_isNotOk(skill_id, sd) )
 		return;
 	if( skillmoreinfo != -1 ) {
@@ -15354,7 +15351,9 @@ void clif_Mail_refreshinbox(struct map_session_data *sd,enum mail_inbox_type typ
 		}
 
 		// If it came from an npc?
-		//mailType |= MAIL_TYPE_NPC;
+		if( !msg->send_id ){
+			mailType |= MAIL_TYPE_NPC;
+		}
 
 		WFIFOB(fd, offset + 9) = mailType;
 		safestrncpy(WFIFOCP(fd, offset + 10), msg->send_name, NAME_LENGTH);
@@ -17483,7 +17482,6 @@ void clif_bg_expulsion_single(struct map_session_data *sd, const char *name, con
 	WFIFOSET(fd, 90);
 }
 
-
 /// Validates and processes battlechat messages [pakpil] (CZ_BATTLEFIELD_CHAT).
 /// 0x2db <packet len>.W <text>.?B (<name> : <message>) 00
 void clif_parse_BattleChat(int fd, struct map_session_data* sd){
@@ -17494,6 +17492,7 @@ void clif_parse_BattleChat(int fd, struct map_session_data* sd){
 
 	bg_send_message(sd, output, strlen(output) );
 }
+
 
 /// Notifies client of a battleground score change (ZC_BATTLEFIELD_NOTIFY_POINT).
 /// 02de <camp A points>.W <camp B points>.W
@@ -17565,6 +17564,7 @@ void clif_bg_updatescore_team(struct battleground_data *bg)
 		clif_send(buf, packet_len(0x2de), &sd->bl, SELF);
 	}
 }
+
 
 /// Battleground camp belong-information (ZC_BATTLEFIELD_NOTIFY_CAMPINFO).
 /// 02dd <account id>.L <name>.24B <camp>.W
@@ -20215,9 +20215,15 @@ void clif_parse_sale_refresh( int fd, struct map_session_data* sd ){
 /// 09b5 (ZC_OPEN_BARGAIN_SALE_TOOL)
 void clif_sale_open( struct map_session_data* sd ){
 #if PACKETVER_SUPPORTS_SALES
-	int fd = sd->fd;
+	nullpo_retv(sd);
 
-	// TODO: do we want state tracking?
+	if( sd->state.sale_open ){
+		return;
+	}
+
+	sd->state.sale_open = true;
+
+	int fd = sd->fd;
 
 	WFIFOHEAD(fd, 2);
 	WFIFOW(fd, 0) = 0x9b5;
@@ -20236,11 +20242,11 @@ void clif_parse_sale_open( int fd, struct map_session_data* sd ){
 		return;
 	}
 
-	if( !pc_has_permission( sd, PC_PERM_CASHSHOP_SALE ) ){
-		return;
-	}
+	char command[CHAT_SIZE_MAX];
 
-	clif_sale_open(sd);
+	safesnprintf( command, sizeof(command), "%climitedsale", atcommand_symbol );
+
+	is_atcommand(fd, sd, command, 1);
 #endif
 }
 
@@ -20248,6 +20254,14 @@ void clif_parse_sale_open( int fd, struct map_session_data* sd ){
 /// 09bd (ZC_CLOSE_BARGAIN_SALE_TOOL)
 void clif_sale_close(struct map_session_data* sd) {
 #if PACKETVER_SUPPORTS_SALES
+	nullpo_retv(sd);
+
+	if( !sd->state.sale_open ){
+		return;
+	}
+
+	sd->state.sale_open = false;
+
 	int fd = sd->fd;
 
 	WFIFOHEAD(fd, 2);
@@ -20265,8 +20279,6 @@ void clif_parse_sale_close(int fd, struct map_session_data* sd) {
 	if( RFIFOL(fd, 2) != sd->status.account_id ){
 		return;
 	}
-
-	// TODO: do we want state tracking?
 
 	clif_sale_close(sd);
 #endif
@@ -20306,7 +20318,7 @@ void clif_parse_sale_search( int fd, struct map_session_data* sd ){
 		return;
 	}
 
-	if( !pc_has_permission( sd, PC_PERM_CASHSHOP_SALE ) ){
+	if( !sd->state.sale_open ){
 		return;
 	}
 
@@ -20360,7 +20372,7 @@ void clif_parse_sale_add( int fd, struct map_session_data* sd ){
 		return;
 	}
 
-	if( !pc_has_permission( sd, PC_PERM_CASHSHOP_SALE ) ){
+	if( !sd->state.sale_open ){
 		return;
 	}
 
@@ -20403,7 +20415,7 @@ void clif_parse_sale_remove( int fd, struct map_session_data* sd ){
 		return;
 	}
 
-	if( !pc_has_permission( sd, PC_PERM_CASHSHOP_SALE ) ){
+	if( !sd->state.sale_open ){
 		return;
 	}
 

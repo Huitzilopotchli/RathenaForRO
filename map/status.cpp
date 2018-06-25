@@ -1840,8 +1840,7 @@ int status_damage(struct block_list *src,struct block_list *target,int64 dhp, in
 	//cf SC_REBIRTH, SC_KAIZEL, pc_dead...
 	if(target->type == BL_PC) {
 		TBL_PC *sd = BL_CAST(BL_PC,target);
-//		if( sd->bg_id ) {
-		if (sd->bg_id) {//aca va lo de eamod para rankings y weas asi
+		if( sd->bg_id ) {
 			struct battleground_data *bg;
 //			if( (bg = bg_team_search(sd->bg_id)) != NULL && bg->die_event[0] )
 			if (map[sd->bl.m].flag.battleground && (bg = bg_team_search(sd->bg_id)) != NULL && bg->die_event[0])
@@ -2184,10 +2183,10 @@ bool status_check_skilluse(struct block_list *src, struct block_list *target, ui
 				return false; // Can't amp out of Wand of Hermode :/ [Skotlex]
 		}
 
-		if (skill_id &&// Do not block item-casted skills.
-			src->type != BL_PC || ((TBL_PC*)src)->skillitem != skill_id)
-		 // Skills blocked through status changes...
-		{	if (!flag && ( // Blocked only from using the skill (stuff like autospell may still go through
+		if (skill_id && // Do not block item-casted skills.
+			(src->type != BL_PC || ((TBL_PC*)src)->skillitem != skill_id)
+		) {	// Skills blocked through status changes...
+			if (!flag && ( // Blocked only from using the skill (stuff like autospell may still go through
 				sc->cant.cast ||
 				(sc->data[SC_BASILICA] && (sc->data[SC_BASILICA]->val4 != src->id || skill_id != HP_BASILICA)) || // Only Basilica caster that can cast, and only Basilica to cancel it
 				(sc->data[SC_MARIONETTE] && skill_id != CG_MARIONETTE) || // Only skill you can use is marionette again to cancel it
@@ -2630,13 +2629,9 @@ void status_calc_misc(struct block_list *bl, struct status_data *status, int lev
 		status->cri = 0;
 
 	if (bl->type&battle_config.enable_perfect_flee) {
-		struct map_session_data *sd = BL_CAST(BL_PC, bl);
-		if (((sd->class_&MAPID_BASEMASK) == MAPID_MAGE) || ((sd->class_&MAPID_UPPERMASK) == MAPID_BARDDANCER) | ((sd->class_&MAPID_UPPERMASK) == MAPID_PRIEST))
-		{
-			stat = status->flee2;
-			stat += status->luk + 10; // (every 10 luk = +1 perfect flee)
-			status->flee2 = cap_value(stat, 0, SHRT_MAX);
-		}
+		stat = status->flee2;
+		stat += status->luk + 20; // (every 10 luk = +1 perfect flee)
+		status->flee2 = cap_value(stat, 0, SHRT_MAX);
 	} else
 		status->flee2 = 0;
 
@@ -4452,7 +4447,7 @@ void status_calc_regen(struct block_list *bl, struct status_data *status, struct
 	sd = BL_CAST(BL_PC,bl);
 	sc = status_get_sc(bl);
 
-	val = 1 + (status->vit/5) + (status->max_hp/200);
+	val = 1 + (status->vit/5) + (status->max_hp/200) /12;
 
 	if( sd && sd->hprecov_rate != 100 )
 		val = val*sd->hprecov_rate/100;
@@ -4461,7 +4456,7 @@ void status_calc_regen(struct block_list *bl, struct status_data *status, struct
 
 	regen->hp = cap_value(val, reg_flag, SHRT_MAX);
 
-	val = 1 + (status->int_/6) + (status->max_sp/100);
+	val = 1 + (status->int_/6) + (status->max_sp/100)/16;
 	if( status->int_ >= 120 )
 		val += ((status->int_-120)>>1) + 4;
 
@@ -4481,14 +4476,14 @@ void status_calc_regen(struct block_list *bl, struct status_data *status, struct
 
 		val = 0;
 		if( (skill=pc_checkskill(sd,SM_RECOVERY)) > 0 )
-			val += skill*5 + skill*status->max_hp/500;
+			val += skill*5 + (skill*status->max_hp/500)/20;
 		sregen->hp = cap_value(val, 0, SHRT_MAX);
 
 		val = 0;
 		if( (skill=pc_checkskill(sd,MG_SRECOVERY)) > 0 )
-			val += skill*3 + skill*status->max_sp/500;
+			val += skill*3 + (skill*status->max_sp/500)/16;
 		if( (skill=pc_checkskill(sd,NJ_NINPOU)) > 0 )
-			val += skill*3 + skill*status->max_sp/500;
+			val += skill*3 + (skill*status->max_sp/500)/16;
 		if( (skill=pc_checkskill(sd,WM_LESSON)) > 0 )
 			val += 3 + 3 * skill;
 
@@ -4502,20 +4497,20 @@ void status_calc_regen(struct block_list *bl, struct status_data *status, struct
 
 		val = 0;
 		if( (skill=pc_checkskill(sd,MO_SPIRITSRECOVERY)) > 0 )
-			val += skill*4 + skill*status->max_hp/500;
+			val += skill*4 + (skill*status->max_hp/500)/20;
 
 		if( (skill=pc_checkskill(sd,TK_HPTIME)) > 0 && sd->state.rest )
-			val += skill*30 + skill*status->max_hp/500;
+			val += skill*30 + (skill*status->max_hp/500)/20;
 		sregen->hp = cap_value(val, 0, SHRT_MAX);
 
 		val = 0;
 		if( (skill=pc_checkskill(sd,TK_SPTIME)) > 0 && sd->state.rest ) {
-			val += skill*3 + skill*status->max_sp/500;
+			val += skill*3 + (skill*status->max_sp/500)/16;
 			if ((skill=pc_checkskill(sd,SL_KAINA)) > 0) // Power up Enjoyable Rest
 				val += (30+10*skill)*val/100;
 		}
 		if( (skill=pc_checkskill(sd,MO_SPIRITSRECOVERY)) > 0 )
-			val += skill*2 + skill*status->max_sp/500;
+			val += skill*2 + (skill*status->max_sp/500)/16;
 		sregen->sp = cap_value(val, 0, SHRT_MAX);
 	}
 
